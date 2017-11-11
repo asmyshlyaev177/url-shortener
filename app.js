@@ -1,6 +1,5 @@
 var express = require('express');
 var path = require('path');
-var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var urlParser = require('url');
 var app = express();
@@ -15,7 +14,6 @@ mongo.connect(dbAddress, (err, db) => {
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
-app.use(cookieParser());
 
 function isShortUrl(url) {
   if (url.length === 4 && !isNaN(parseInt(url))) {
@@ -40,7 +38,7 @@ function insertLink(url, link) {
       url: url,
       link: String(link)
     })
-  doc.then((res) => { return res });
+  return doc 
 };
 
 function getLink(url) {
@@ -50,23 +48,24 @@ function getLink(url) {
 };
 
 
-app.get('/:shortUrl*', (req, res) => {
-  var url = req.params.shortUrl;
+app.get('/:rpath*', (req, res) => {
+  var url = req.params.rpath;
   if (isShortUrl(url)) {
-    console.log('it is short url!');
     getLink(url).then((link) => {
-      console.log(link[0].url);
-      // res.redirect(302, 'http://' + link[0].url);
+      if (!link.length) {
+        res.redirect(302, '/');
+      }
+      res.redirect(302, link[0].url);
     });
   } else {
-    console.log('not a short url');
+    var newUrl = req.url.replace(/^\//, '');
     generateLink()
       .then((link) => {
-        return {status: insertLink(url, link), link: link}
+        return {status: insertLink(newUrl, link), link: link}
       })
       .then((result) => {
         var shortLink = req.protocol + '://' + req.get('host') + '/' + result.link;
-        res.json({original_url: url, short_url: shortLink})
+        res.json({original_url: newUrl, short_url: shortLink})
       });
   }
 })
