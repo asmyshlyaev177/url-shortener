@@ -45,15 +45,14 @@ function insertLink(url, link, cb) {
 
 app.get('/:shortUrl', (req, res) => {
   var url = req.params.shortUrl;
-  console.log('go to short url page');
   if (isShortUrl(url)) {
     console.log('it is short url!');
   } else {
     console.log('not a short url');
     generateLink((link) => {
       insertLink(url, link, (status) => { 
-        console.log(status.result) 
-        res.json({original_url: url, short_url: link})
+        var shortLink = req.protocol + '://' + req.get('host') + '/' + link;
+        res.json({original_url: url, short_url: shortLink})
       });
     });
   }
