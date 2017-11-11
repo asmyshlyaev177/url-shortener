@@ -24,23 +24,23 @@ function isShortUrl(url) {
   return false
 }
 
-async function generateLink(cb) {
+async function generateLink() {
   var link;
   var linkExist;
   do {
     link = Math.floor(Math.random()*8999+1000);
     linkExist = await mongodb.collection('url').find({"link": String(link)}).toArray();
   } while ( linkExist.length > 0 );
-  cb(link);
+  return link
 };
 
-function insertLink(url, link, cb) {
- var doc = mongodb.collection('url') 
+function insertLink(url, link) {
+  var doc = mongodb.collection('url') 
     .insertOne({
       url: url,
       link: link
     })
- doc.then((res) => {cb(res)});
+  doc.then((res) => { return res });
 };
 
 app.get('/:shortUrl', (req, res) => {
@@ -49,12 +49,14 @@ app.get('/:shortUrl', (req, res) => {
     console.log('it is short url!');
   } else {
     console.log('not a short url');
-    generateLink((link) => {
-      insertLink(url, link, (status) => { 
-        var shortLink = req.protocol + '://' + req.get('host') + '/' + link;
+    generateLink()
+      .then((link) => {
+        return {status: insertLink(url, link), link: link}
+      })
+      .then((result) => {
+        var shortLink = req.protocol + '://' + req.get('host') + '/' + result.link;
         res.json({original_url: url, short_url: shortLink})
       });
-    });
   }
 })
 
