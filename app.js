@@ -49,7 +49,8 @@ function getLink(url) {
   return link
 };
 
-app.get('/:shortUrl', (req, res) => {
+
+app.get('/:shortUrl*', (req, res) => {
   var url = req.params.shortUrl;
   if (isShortUrl(url)) {
     console.log('it is short url!');
@@ -85,7 +86,7 @@ app.use(function(err, req, res, next) {
 
   // render the error page
   res.status(err.status || 500);
-  res.end('error');
+  res.end(err.message);
 });
 
 module.exports = app;
