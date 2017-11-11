@@ -38,15 +38,25 @@ function insertLink(url, link) {
   var doc = mongodb.collection('url') 
     .insertOne({
       url: url,
-      link: link
+      link: String(link)
     })
   doc.then((res) => { return res });
+};
+
+function getLink(url) {
+  var link = mongodb.collection('url')
+    .find({"link": url}).toArray()
+  return link
 };
 
 app.get('/:shortUrl', (req, res) => {
   var url = req.params.shortUrl;
   if (isShortUrl(url)) {
     console.log('it is short url!');
+    getLink(url).then((link) => {
+      console.log(link[0].url);
+      // res.redirect(302, 'http://' + link[0].url);
+    });
   } else {
     console.log('not a short url');
     generateLink()
