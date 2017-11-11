@@ -4,7 +4,14 @@ var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var urlParser = require('url');
 var app = express();
+var mongo = require('mongodb').MongoClient;
+var dbAddress = 'mongodb://localhost:27017/urlshortener';
+var mongodb;
 
+mongo.connect(dbAddress, (err, db) => {
+  if (err) console.log(err);
+  mongodb = db;
+});
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -17,13 +24,39 @@ function isShortUrl(url) {
   return false
 }
 
+async function generateLink(cb) {
+  var link;
+  var linkExist;
+  do {
+    link = Math.floor(Math.random()*8999+1000);
+    linkExist = await mongodb.collection('url').find({"link": String(link)}).toArray();
+  } while ( linkExist.length > 0 );
+  cb(link);
+};
+
+function insertLink(url, link, cb) {
+ var doc = mongodb.collection('url') 
+    .insertOne({
+      url: url,
+      link: link
+    })
+ doc.then((res) => {cb(res)});
+};
+
 app.get('/:shortUrl', (req, res) => {
-  if (isShortUrl(req.params.shortUrl)) {
+  var url = req.params.shortUrl;
+  console.log('go to short url page');
+  if (isShortUrl(url)) {
     console.log('it is short url!');
   } else {
-    console.log(`url: ${req.params.shortUrl}`)
+    console.log('not a short url');
+    generateLink((link) => {
+      insertLink(url, link, (status) => { 
+        console.log(status.result) 
+        res.json({original_url: url, short_url: link})
+      });
+    });
   }
-  res.json(req.params.shortUrl)
 })
 
 // catch 404 and forward to error handler
