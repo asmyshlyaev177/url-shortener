@@ -1,21 +1,30 @@
 var express = require('express');
 var path = require('path');
-var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
-
-var index = require('./routes/index');
-var users = require('./routes/users');
-
+var urlParser = require('url');
 var app = express();
 
 
-app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
-app.use(express.static(path.join(__dirname, 'public')));
 
+function isShortUrl(url) {
+  if (url.length === 4 && !isNaN(parseInt(url))) {
+    return true
+  }
+  return false
+}
+
+app.get('/:shortUrl', (req, res) => {
+  if (isShortUrl(req.params.shortUrl)) {
+    console.log('it is short url!');
+  } else {
+    console.log(`url: ${req.params.shortUrl}`)
+  }
+  res.json(req.params.shortUrl)
+})
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
