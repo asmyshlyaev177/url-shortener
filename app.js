@@ -67,39 +67,37 @@ app.get('/', function (req, res) {
     links.forEach((link) => {
       link.link = siteUrl(req, res) + link.link
     });
-    res.render('index', { list: links, siteUrl: siteUrl(req, res)});
+    return res.render('index', { list: links, siteUrl: siteUrl(req, res)});
   })
 });
 
 
-app.get('/:rpath*', (req, res, next) => {
+app.get('/:rpath*', (req, res) => {
   if (req.url === '/favicon.ico') {
-    res.end();
-    next();
+    return res.end();
   }
   var url = req.params.rpath.replace(/^\//, '');
   if (isShortUrl(url)) {
     getLink(url).then((link) => {
       if (!link.length) {
         res.redirect(302, '/');
+        return next();
       }
-      res.redirect(302, link[0].url);
+      return res.redirect(302, link[0].url);
     });
   } else {
     var newUrl = req.url.replace(/^\//, '');
     if (isInvalidUrl(newUrl)) {
-      var err = new Error(`"${newUrl}" it is not a valid URL`);
-      err.status = 500;
-      res.end(err);
-    }
+      var err = `"${newUrl}" it is not a valid URL`;
+      return res.end(err);
+    } 
     generateLink()
       .then((link) => {
         return {status: insertLink(newUrl, link), link: link}
       })
       .then((result) => {
         var shortLink = siteUrl(req, res) + result.link;
-        res.json({original_url: newUrl, short_url: shortLink});
-        next();
+        return res.json({original_url: newUrl, short_url: shortLink});
       });
   }
 })
