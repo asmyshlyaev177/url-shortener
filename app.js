@@ -80,8 +80,7 @@ app.get('/:rpath*', (req, res) => {
   if (isShortUrl(url)) {
     getLink(url).then((link) => {
       if (!link.length) {
-        res.redirect(302, '/');
-        return next();
+        return res.redirect(302, '/');
       }
       return res.redirect(302, link[0].url);
     });
