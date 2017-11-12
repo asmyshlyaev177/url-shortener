@@ -49,6 +49,14 @@ function getLink(url) {
   return link
 };
 
+function validateUrl(url) {
+  var result = urlParser.parse(url);
+  if (result.hostname) {
+    return true
+  }
+  return false
+};
+
 app.get('/', function (req, res) {
   var links = mongodb.collection('url').find({}).toArray();
   var siteUrl = req.protocol + '://' + req.get('host') + '/';
@@ -74,13 +82,18 @@ app.get('/:rpath*', (req, res, next) => {
       res.redirect(302, link[0].url);
     });
   } else {
+    var siteUrl = req.protocol + '://' + req.get('host') + '/';
     var newUrl = req.url.replace(/^\//, '');
+    if (!validateUrl(newUrl)) {
+      res.end(`${newUrl} it is not a valid URL`);
+      next();
+    }
     generateLink()
       .then((link) => {
         return {status: insertLink(newUrl, link), link: link}
       })
       .then((result) => {
-        var shortLink = req.protocol + '://' + req.get('host') + '/' + result.link;
+        var shortLink = siteUrl + result.link;
         res.json({original_url: newUrl, short_url: shortLink})
       });
   }
