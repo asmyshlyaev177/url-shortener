@@ -51,11 +51,12 @@ function getLink(url) {
 
 app.get('/', function (req, res) {
   var links = mongodb.collection('url').find({}).toArray();
+  var siteUrl = req.protocol + '://' + req.get('host');
   links.then((links) => {
     links.forEach((link) => {
-      link.link = req.protocol + '://' + req.get('host') + '/' + link.link
+      link.link = siteUrl + link.link
     });
-    res.render('index', { list: links});
+    res.render('index', { list: links, siteUrl: siteUrl});
   })
 });
 
