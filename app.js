@@ -49,31 +49,35 @@ function getLink(url) {
   return link
 };
 
-function validateUrl(url) {
+function isInvalidUrl(url) {
   var result = urlParser.parse(url);
   if (result.hostname) {
-    return true
+    return false 
   }
-  return false
+  return true
 };
+
+function siteUrl(req, res) {
+  return req.protocol + '://' + req.get('host') + '/'
+}
 
 app.get('/', function (req, res) {
   var links = mongodb.collection('url').find({}).toArray();
-  var siteUrl = req.protocol + '://' + req.get('host') + '/';
   links.then((links) => {
     links.forEach((link) => {
-      link.link = siteUrl + link.link
+      link.link = siteUrl(req, res) + link.link
     });
-    res.render('index', { list: links, siteUrl: siteUrl});
+    res.render('index', { list: links, siteUrl: siteUrl(req, res)});
   })
 });
 
+
 app.get('/:rpath*', (req, res, next) => {
-  if (req.params.rpath === 'favicon.ico') {
+  if (req.url === '/favicon.ico') {
     res.end();
     next();
   }
-  var url = req.params.rpath;
+  var url = req.params.rpath.replace(/^\//, '');
   if (isShortUrl(url)) {
     getLink(url).then((link) => {
       if (!link.length) {
@@ -82,19 +86,20 @@ app.get('/:rpath*', (req, res, next) => {
       res.redirect(302, link[0].url);
     });
   } else {
-    var siteUrl = req.protocol + '://' + req.get('host') + '/';
     var newUrl = req.url.replace(/^\//, '');
-    if (!validateUrl(newUrl)) {
-      res.end(`${newUrl} it is not a valid URL`);
-      next();
+    if (isInvalidUrl(newUrl)) {
+      var err = new Error(`"${newUrl}" it is not a valid URL`);
+      err.status = 500;
+      next(err);
     }
     generateLink()
       .then((link) => {
         return {status: insertLink(newUrl, link), link: link}
       })
       .then((result) => {
-        var shortLink = siteUrl + result.link;
-        res.json({original_url: newUrl, short_url: shortLink})
+        var shortLink = siteUrl(req, res) + result.link;
+        res.json({original_url: newUrl, short_url: shortLink});
+        next();
       });
   }
 })
