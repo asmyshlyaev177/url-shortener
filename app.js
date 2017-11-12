@@ -4,7 +4,7 @@ var bodyParser = require('body-parser');
 var urlParser = require('url');
 var app = express();
 var mongo = require('mongodb').MongoClient;
-var dbAddress = 'mongodb://localhost:27017/urlshortener';
+var dbAddress = 'mongodb://urlshortener:shortGoogleFCC@ds251985.mlab.com:51985/urlshortener';
 var mongodb;
 
 mongo.connect(dbAddress, (err, db) => {
@@ -51,7 +51,7 @@ function getLink(url) {
 
 app.get('/', function (req, res) {
   var links = mongodb.collection('url').find({}).toArray();
-  var siteUrl = req.protocol + '://' + req.get('host');
+  var siteUrl = req.protocol + '://' + req.get('host') + '/';
   links.then((links) => {
     links.forEach((link) => {
       link.link = siteUrl + link.link
@@ -60,7 +60,11 @@ app.get('/', function (req, res) {
   })
 });
 
-app.get('/:rpath*', (req, res) => {
+app.get('/:rpath*', (req, res, next) => {
+  if (req.params.rpath === 'favicon.ico') {
+    res.end();
+    next();
+  }
   var url = req.params.rpath;
   if (isShortUrl(url)) {
     getLink(url).then((link) => {
