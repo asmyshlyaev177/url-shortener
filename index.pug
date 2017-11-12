@@ -1,0 +1,21 @@
+html
+  head
+    title= 'List of links'
+  body
+    div
+      span 
+      |Add link for example http://ip/https://google.com 
+      br
+      |or enter short link http://ip/1234
+      br
+      br
+      div All links:
+        ul
+          each val in list
+            li
+              span Original url 
+              a(href=val.url) #{val.url}
+              span  Short Url  
+              a(href=val.link) #{val.link}
+          else
+            span Don't have any links

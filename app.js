@@ -14,6 +14,8 @@ mongo.connect(dbAddress, (err, db) => {
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
+app.set('view engine', 'pug');
+app.set('views', './');
 
 function isShortUrl(url) {
   if (url.length === 4 && !isNaN(parseInt(url))) {
@@ -47,6 +49,15 @@ function getLink(url) {
   return link
 };
 
+app.get('/', function (req, res) {
+  var links = mongodb.collection('url').find({}).toArray();
+  links.then((links) => {
+    links.forEach((link) => {
+      link.link = req.protocol + '://' + req.get('host') + '/' + link.link
+    });
+    res.render('index', { list: links});
+  })
+});
 
 app.get('/:rpath*', (req, res) => {
   var url = req.params.rpath;
