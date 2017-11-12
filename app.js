@@ -90,7 +90,7 @@ app.get('/:rpath*', (req, res, next) => {
     if (isInvalidUrl(newUrl)) {
       var err = new Error(`"${newUrl}" it is not a valid URL`);
       err.status = 500;
-      next(err);
+      res.end(err);
     }
     generateLink()
       .then((link) => {
